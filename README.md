@@ -24,7 +24,7 @@ A Symfony website for Test Api...
 
 ** Initial Setup **
 
-* git clone
+* git clone https://github.com/niravpateljoin/home-task.git
 
 ```
 git clone ---.
