@@ -8,7 +8,6 @@ use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
-use App\Entity\Movies;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use App\Service\MovieService;
 use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
@@ -49,27 +48,17 @@ class MovieController extends AbstractController
      *
      * @param Request $request
      * @param ManagerRegistry $doctrine
+     * @param MovieService $movieService
      * @return JsonResponse
      */
-    public function getAction(Request $request,  ManagerRegistry $doctrine): JsonResponse
+    public function getAction(Request $request,  ManagerRegistry $doctrine, MovieService $movieService): JsonResponse
     {
-        $movieArr = [];
         $id = $request->get('id');
         $em = $doctrine->getManager();
-        $movies = $em->getRepository(Movies::class)->find($id);
-        if ($movies instanceof Movies) {
-            $movieArr = array(
-                'name' => $movies->getName(),
-                'casts' => $movies->getCasts(),
-                'release_data' => $movies->getReleaseAt()->format('d-m-y'),
-                'director' => $movies->getDirector(),
-                'ratings' => $movies->getRatings()
-            );
-        }
-        else {
-            $movieArr['status'] = 'error';
-            $movieArr['message'] = 'Movie object not found for given id : '. $id;
-        }
+
+        // call to getMovie function from the MovieService..
+        $movieArr = $movieService->getMovie($em, $id);
+
         return new JsonResponse($movieArr);
     }
 

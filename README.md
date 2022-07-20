@@ -36,6 +36,12 @@ git clone https://github.com/niravpateljoin/home-task.git
 composer install      // this will install all the dependencies for this project.
 ```
 
+* Run Data-Fixture
+
+```
+php bin/console doctrine:fixtures:load       // this command will generate the common and required data for run the api, please run this command for first time only...
+```
+
 * Start server to run the project
 
 ```

@@ -51,19 +51,15 @@ class MovieControllerTest extends WebTestCase
         $objMovies->setName('test_'.rand(1,100));
         $objMovies->setDirector('director_'.rand(1,100));
         $objMovies->setReleaseAt(new \DateTime());
-        $objMovies->setRatings([]);
-        $objMovies->setCasts([]);
-
-        $movies = array(
-            'name' => '',
-            'director' => '',
-            'release_date' => '',
-            'ratings' => '',
-            'casts' => ''
+        $ratings = array(
+            'imdb' => 3.7,
+            'rotten_tomatto' => 4.0
         );
-        $newUrl = $createUrl.'?name='.$objMovies->getName().'&director='.$objMovies->getDirector().'&release_date='.$objMovies->getReleaseAt()->format('d-m-y').'&user_id='.$userId;
-        $crawler = $client->request('POST', $newUrl);
+
+        $newUrl = $createUrl.'?name='.$objMovies->getName().'&director='.$objMovies->getDirector().'&release_date='.$objMovies->getReleaseAt()->format('d-m-y').'&imdb='.$ratings['imdb'].'&rotten_tomatto='.$ratings['rotten_tomatto'].'&casts[]=test&casts[]=test_2'.'&user_id='.$userId;
+        $response = $client->request('POST', $newUrl);
         dump("/api/v1/movies//[POST] response => ".$client->getResponse()->getContent());
+
         $this->assertTrue(true,'successfully created new movie');
     }
 
@@ -77,7 +73,7 @@ class MovieControllerTest extends WebTestCase
         $randomId = $this->getRandomMovieId();
         if (!$randomId) $randomId = 1;
         $newUrl = $getUrl.$randomId;
-        $crawler = $client->request('GET', $newUrl);
+        $response = $client->request('GET', $newUrl);
         dump("/api/v1/movies/{id}/[GET] response => ".$client->getResponse()->getContent());
         $this->assertTrue(true);
     }
@@ -92,7 +88,7 @@ class MovieControllerTest extends WebTestCase
         $userId = $this->getRandomUserId();
         if (!$userId > 0) $userId = 1;
         $newUrl = $getUrl.'user_id='.$userId;
-        $crawler = $client->request('GET', $newUrl);
+        $response = $client->request('GET', $newUrl);
         dump("/api/v1/movies/[GET] response => ".$client->getResponse()->getContent());
         $this->assertTrue(true);
     }

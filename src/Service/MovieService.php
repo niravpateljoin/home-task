@@ -4,6 +4,9 @@
 namespace App\Service;
 
 use App\Entity\Movies;
+use App\Entity\MoviesCast;
+use App\Entity\MoviesRatings;
+use App\Entity\Ratings;
 use App\Entity\User;
 use DateTime;
 use Doctrine\ORM\Exception\ORMException;
@@ -37,14 +40,7 @@ class MovieService
         $director = $request->get('director');
         $imdb = $request->get('imdb') ?? '';
         $rottenTomatto = $request->get('rotten_tomatto') ?? '';
-        $ratings = array();
-        if($imdb !== '') {
-            $ratings['imdb'] = $imdb;
-        }
-
-        if($rottenTomatto !== '') {
-            $ratings['rotten_tomatto'] = $rottenTomatto;
-        }
+        $ratings = '';
 
         if($movieName == '') {
             $isError = true;
@@ -90,10 +86,39 @@ class MovieService
             $objMovies->setName($movieName);
             $objMovies->setDirector($director);
             $objMovies->setReleaseAt($releaseDateTime);
-            $objMovies->setRatings($ratings);
-            $objMovies->setCasts($casts);
             $objMovies->setUser($user);
             $em->persist($objMovies);
+            $em->flush();
+
+            if(!empty($casts)) {
+                foreach ($casts as $cast) {
+                    $objMoviesCast = new MoviesCast();
+                    $objMoviesCast->setName($cast);
+                    $objMoviesCast->setMovies($objMovies);
+                    $em->persist($objMoviesCast);
+                }
+            }
+            $em->flush();
+
+            if($imdb !== '') {
+                $ratings .= 'imdb: '.$imdb. ', ';
+                $objRatingsForImdb = $em->getRepository(Ratings::class)->findOneByName('imdb');
+                $objMoviesRatings = new MoviesRatings();
+                $objMoviesRatings->setRatings($objRatingsForImdb);
+                $objMoviesRatings->setMovies($objMovies);
+                $objMoviesRatings->setValue($imdb);
+                $em->persist($objMoviesRatings);
+            }
+
+            if($rottenTomatto !== '') {
+                $ratings .= 'rotten_tomatto: '.$rottenTomatto;
+                $objRatingsForRotten = $em->getRepository(Ratings::class)->findOneByName('rotten_tomatto');
+                $objMoviesRatings2 = new MoviesRatings();
+                $objMoviesRatings2->setRatings($objRatingsForRotten);
+                $objMoviesRatings2->setMovies($objMovies);
+                $objMoviesRatings2->setValue($rottenTomatto);
+                $em->persist($objMoviesRatings2);
+            }
             $em->flush();
 
             $email = (new TemplatedEmail())
@@ -105,8 +130,8 @@ class MovieService
                     'movieName' => $movieName,
                     'director' => $director,
                     'releaseDate' => $releaseDate,
-                    'ratings' => implode('', $ratings),
-                    'casts' => implode('', $casts),
+                    'ratings' => $ratings,
+                    'casts' => implode(', ', $casts),
                     'userName' => $user->getEmail(),
                 ]);
             $mailer->send($email);
@@ -118,6 +143,12 @@ class MovieService
         return $response;
     }
 
+    /**
+     * @param Request $request
+     * @param EntityManager $em
+     * @param $user
+     * @return array
+     */
     public function listMovies(Request $request, EntityManager $em, $user): array
     {
         if(!$user){
@@ -144,18 +175,92 @@ class MovieService
 
             $moviesArr = array();
             foreach ($objMovies as $movie) {
-                $moviesArr[] = array(
+                $tempArr = array(
                     'name' => $movie->getName(),
-                    'casts' => $movie->getCasts(),
+                    'casts' => [],
                     'release_data' => $movie->getReleaseAt()->format('d-m-y'),
                     'director' => $movie->getDirector(),
-                    'ratings' => $movie->getRatings()
+                    'ratings' => []
                 );
+
+                $objMoviesCasts = $em->getRepository(MoviesCast::class)->findByMovies($movie);
+                if(!empty($objMoviesCasts)) {
+                    $castArr = array();
+                    foreach ($objMoviesCasts as $objMoviesCast) {
+                        $castArr[] = $objMoviesCast->getName();
+                    }
+                    $tempArr['casts'] = $castArr;
+                }
+
+                $objMoviesRatings = $em->getRepository(MoviesRatings::class)->findByMovies($movie);
+                if(!empty($objMoviesRatings)) {
+                    $ratingArr = array();
+                    foreach ($objMoviesRatings as $objMoviesRating) {
+                        if($objMoviesRating->getRatings()->getName() == 'imdb'){
+                            $ratingArr['imdb'] = $objMoviesRating->getValue();
+                        }
+                        if($objMoviesRating->getRatings()->getName() == 'rotten_tomatto'){
+                            $ratingArr['rotten_tomatto'] = $objMoviesRating->getValue();
+                        }
+                    }
+                    $tempArr['ratings'] = $ratingArr;
+                }
+
+                $moviesArr[] = $tempArr;
             }
 
             $response['status'] = 'success';
             $response['data'] = $moviesArr;
         }
         return $response;
+    }
+
+    /**
+     * @param EntityManager $em
+     * @param $id
+     * @return array
+     */
+    public function getMovie(EntityManager $em, $id): array
+    {
+        $movies = $em->getRepository(Movies::class)->find($id);
+
+        if ($movies instanceof Movies) {
+            $movieArr = array(
+                'name' => $movies->getName(),
+                'casts' => [],
+                'release_data' => $movies->getReleaseAt()->format('d-m-y'),
+                'director' => $movies->getDirector(),
+                'ratings' => []
+
+            );
+            $objMoviesCasts = $em->getRepository(MoviesCast::class)->findByMovies($movies);
+            if(!empty($objMoviesCasts)) {
+                $castArr = array();
+                foreach ($objMoviesCasts as $objMoviesCast) {
+                    $castArr[] = $objMoviesCast->getName();
+                }
+                $movieArr['casts'] = $castArr;
+            }
+
+            $objMoviesRatings = $em->getRepository(MoviesRatings::class)->findByMovies($movies);
+            if(!empty($objMoviesRatings)) {
+                $ratingArr = array();
+                foreach ($objMoviesRatings as $objMoviesRating) {
+                    if($objMoviesRating->getRatings()->getName() == 'imdb'){
+                        $ratingArr['imdb'] = $objMoviesRating->getValue();
+                    }
+                    if($objMoviesRating->getRatings()->getName() == 'rotten_tomatto'){
+                        $ratingArr['rotten_tomatto'] = $objMoviesRating->getValue();
+                    }
+                }
+                $movieArr['ratings'] = $ratingArr;
+            }
+        }
+        else {
+            $movieArr['status'] = 'error';
+            $movieArr['message'] = 'Movie object not found for given id : '. $id;
+        }
+
+        return $movieArr;
     }
 }
