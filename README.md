@@ -45,6 +45,8 @@ symfony server:start
       The Web server is using PHP CGI 7.4.9
       https://127.0.0.1:8000
 
+** How to run Api **
+
 * Add Movie - API['POST']
 
 ```
@@ -68,3 +70,22 @@ https://127.0.0.1:8000/api/v1/movies?user_id=1
 ```
 
 Above api gives all movie data for the `user id=1`
+
+
+** How to run Web-test **
+
+* First, navigate project direct.
+* Then you have to run the following command in order to run the web-test.
+
+```
+./vendor/bin/phpunit
+```
+
+The above command run all the tests which are in `tests/` directory.In our project we implemented one test named `MovieControllerTest`, so after running above command all functions getting execute one by one.
+- testGenerateRandomUser -> this function allow you to create user at very first time.
+
+** Note **
+
+Before run any Api please change some configurations as follows:
+- Please set `MAILER_DSN` url in `.env` file, for send email after movie added.
+- Please uncomment the code in `config/packages/mailer.yaml`, also change `example@gmail.com` with your mailId to get all mail on your account.
