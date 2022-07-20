@@ -2,6 +2,8 @@
 
 namespace App\Controller;
 
+use Doctrine\ORM\Exception\ORMException;
+use Doctrine\ORM\OptimisticLockException;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -9,6 +11,7 @@ use Symfony\Component\HttpFoundation\Request;
 use App\Entity\Movies;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
 use App\Service\MovieService;
+use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Routing\Annotation\Route;
 
@@ -18,14 +21,14 @@ class MovieController extends AbstractController
      * @Route("/api/v1/movies", name="add_movie", methods={"POST"})
      *
      *
-     * @param \Symfony\Component\HttpFoundation\Request $request
-     * @param \App\Service\MovieService $movieService
-     * @param \Doctrine\Persistence\ManagerRegistry $doctrine
-     * @param \Symfony\Component\Mailer\MailerInterface $mailer
-     * @return \Symfony\Component\HttpFoundation\JsonResponse
-     * @throws \Doctrine\ORM\Exception\ORMException
-     * @throws \Doctrine\ORM\OptimisticLockException
-     * @throws \Symfony\Component\Mailer\Exception\TransportExceptionInterface
+     * @param Request $request
+     * @param MovieService $movieService
+     * @param ManagerRegistry $doctrine
+     * @param MailerInterface $mailer
+     * @return JsonResponse
+     * @throws ORMException
+     * @throws OptimisticLockException
+     * @throws TransportExceptionInterface
      */
     public function addAction(Request $request,
                               MovieService $movieService,
@@ -63,13 +66,17 @@ class MovieController extends AbstractController
                 'ratings' => $movies->getRatings()
             );
         }
+        else {
+            $movieArr['status'] = 'error';
+            $movieArr['message'] = 'Movie object not found for given id : '. $id;
+        }
         return new JsonResponse($movieArr);
     }
 
     /**
-     * @Route("/api/v1/list/movies", name="list_movie", methods={"GET"})
+     * @Route("/api/v1/movies", name="list_movie", methods={"GET"})
      *
-     * @param \Symfony\Component\HttpFoundation\Request $request
+     * @param Request $request
      * @param MovieService $movieService
      * @param ManagerRegistry $doctrine
      *

@@ -6,18 +6,23 @@ namespace App\Service;
 use App\Entity\Movies;
 use App\Entity\User;
 use DateTime;
+use Doctrine\ORM\Exception\ORMException;
+use Doctrine\ORM\OptimisticLockException;
+use Exception as ExceptionAlias;
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 use Symfony\Component\HttpFoundation\Request;
 use Doctrine\ORM\EntityManager;
+use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Email;
 
 class MovieService
 {
     /**
-     * @throws \Doctrine\ORM\OptimisticLockException
-     * @throws \Symfony\Component\Mailer\Exception\TransportExceptionInterface
-     * @throws \Doctrine\ORM\Exception\ORMException
+     * @throws OptimisticLockException
+     * @throws TransportExceptionInterface
+     * @throws ORMException
+     * @throws ExceptionAlias
      */
     public function addMovies(Request $request, EntityManager $em, MailerInterface $mailer, $user): array
     {
@@ -28,10 +33,18 @@ class MovieService
 
         $movieName = $request->get('name');
         $releaseDate = $request->get('release_date');
-        $casts = $request->get('casts') ? $request->get('casts') : array();
+        $casts = $request->get('casts') ?? array();
         $director = $request->get('director');
-        $ratings = $request->get('ratings') ? $request->get('ratings') : array();
+        $imdb = $request->get('imdb') ?? '';
+        $rottenTomatto = $request->get('rotten_tomatto') ?? '';
+        $ratings = array();
+        if($imdb !== '') {
+            $ratings['imdb'] = $imdb;
+        }
 
+        if($rottenTomatto !== '') {
+            $ratings['rotten_tomatto'] = $rottenTomatto;
+        }
 
         if($movieName == '') {
             $isError = true;

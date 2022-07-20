@@ -24,10 +24,10 @@ A Symfony website for Test Api...
 
 ** Initial Setup **
 
-* git clone https://github.com/niravpateljoin/home-task.git
+* git clone
 
 ```
-git clone ---.
+git clone https://github.com/niravpateljoin/home-task.git
 ```
 
 * Initial command to run
@@ -45,26 +45,26 @@ symfony server:start
       The Web server is using PHP CGI 7.4.9
       https://127.0.0.1:8000
 
-* Add Movie - API
+* Add Movie - API['POST']
 
 ```
-https://127.0.0.1:8000/api/v1/movies?name=test&release_date=05-05-1995&director=test&user_id=1
+https://127.0.0.1:8000/api/v1/movies?name=test_movie&imdb=5.2&director=bhansali&release_date=10-12-1997&user_id=1&casts[]=DiCaprio&rotten_tomatto=8.2
 ```
 
 In above api, all the fields are required, If you don't pass any of the fields it's gives validation error.
 
-* Get Movie Data - API
+* Get Movie Data - API['GET']
 
 ```
 https://127.0.0.1:8000/api/v1/movies/1
 ```
 
-Above api gives all data related to `id 1` & also check that user is exists with valid Id.
+Above api gives all data of `movieId 1`.
 
-* Get Movie List - API
+* Get Movie List - API['GET']
 
 ```
-https://127.0.0.1:8000/api/v1/list/movies?user_id=1
+https://127.0.0.1:8000/api/v1/movies?user_id=1
 ```
 
 Above api gives all movie data for the `user id=1`
